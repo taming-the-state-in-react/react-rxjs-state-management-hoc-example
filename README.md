@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/the-road-to-learn-react/react-rxjs-state-management-hoc-example.svg?branch=master)](https://travis-ci.org/the-road-to-learn-react/react-rxjs-state-management-hoc-example) [![Slack](https://slack-the-road-to-learn-react.wieruch.com/badge.svg)](https://slack-the-road-to-learn-react.wieruch.com/)
 
-Showcasing how RxJS can work in React. [Read more about it.](https://www.robinwieruch.de/react-rxjs-state-management-tutorial/)
+Showcasing how RxJS can work in React with state management and higher-order components. [Read more about it.](https://www.robinwieruch.de/react-rxjs-state-management-tutorial/)
 
 ## Installation
 
