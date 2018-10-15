@@ -1,5 +1,5 @@
 {
-  "name": "react-rxjs-state-example",
+  "name": "react-rxjs-state-management-hoc-example",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
