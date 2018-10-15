@@ -1,34 +1,92 @@
 import React from 'react';
+import axios from 'axios';
+import { BehaviorSubject } from 'rxjs/index';
+import { combineLatest, timer } from 'rxjs';
+import { flatMap, map, debounce, filter } from 'rxjs/operators';
 
-import { selectedCurrency$, CURRENCIES } from './state';
-import connect from './connect';
+import withObservableStream from './withObservableStream';
 
-const TradingPairs = ({ currency, actions }) => (
+const SUBJECT = {
+  POPULARITY: 'search',
+  DATE: 'search_by_date',
+};
+
+const App = ({
+  subject,
+  query,
+  stories,
+  onSelectSubject,
+  onChangeInput,
+}) => (
   <div>
-    <h1>Trading Pair</h1>
-    <p>{currency}</p>
+    <h1>Hacker News with React and Rx.js</h1>
 
     <div>
-      {Object.values(CURRENCIES).map(currency => (
+      {Object.values(SUBJECT).map(subject => (
         <button
-          key={currency}
-          onClick={() => actions.onSelectCurrency({ currency })}
+          key={subject}
+          onClick={() => onSelectSubject(subject)}
           type="button"
         >
-          {currency}
+          {subject}
         </button>
       ))}
     </div>
+
+    <input
+      type="text"
+      onChange={event => onChangeInput(event.target.value)}
+    />
+
+    <p>{`http://hn.algolia.com/api/v1/${subject}?query=${query}`}</p>
+
+    <ul>
+      {stories.map(story => (
+        <li key={story.objectID}>
+          <a href={story.url || story.story_url}>
+            {story.title || story.story_title}
+          </a>
+        </li>
+      ))}
+    </ul>
   </div>
 );
 
-const TradingPairsConnected = connect(
-  selectedCurrency$,
+const subject$ = new BehaviorSubject(SUBJECT.POPULARITY);
+const query$ = new BehaviorSubject('');
+
+const queryToFetch$ = query$.pipe(
+  debounce(() => timer(1000)),
+  filter(query => query !== ''),
+);
+
+const fetch$ = combineLatest(subject$, queryToFetch$).pipe(
+  flatMap(([subject, query]) =>
+    axios(`http://hn.algolia.com/api/v1/${subject}?query=${query}`),
+  ),
+  map(result => result.data.hits),
+);
+
+export default withObservableStream(
+  // observables
+  [
+    combineLatest(subject$, query$, (subject, query) => ({
+      subject,
+      query,
+    })),
+    combineLatest(fetch$, stories => ({
+      stories,
+    })),
+  ],
+  // handler
   {
-    onSelectCurrency: selectedCurrency$.next.bind(selectedCurrency$),
+    onSelectSubject: subject => subject$.next(subject),
+    onChangeInput: value => query$.next(value),
   },
-)(TradingPairs);
-
-const App = () => <TradingPairsConnected />;
-
-export default App;
+  // initial state
+  {
+    subject: SUBJECT.POPULARITY,
+    query: '',
+    stories: [],
+  },
+)(App);
