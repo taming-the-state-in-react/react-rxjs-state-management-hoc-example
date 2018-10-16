@@ -79,7 +79,7 @@ export default withObservableStream(
       stories,
     })),
   ],
-  // handler
+  // triggers
   {
     onSelectSubject: subject => subject$.next(subject),
     onChangeQuery: value => query$.next(value),

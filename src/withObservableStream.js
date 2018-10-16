@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default (observables, actions, initialState) => Component => {
+export default (observables, triggers) => Component => {
   return class extends React.Component {
     componentDidMount() {
       this.subscriptions = observables.map(observable =>
@@ -19,7 +19,7 @@ export default (observables, actions, initialState) => Component => {
 
     render() {
       return (
-        <Component {...this.props} {...this.state} {...actions} />
+        <Component {...this.props} {...this.state} {...triggers} />
       );
     }
   };
