@@ -16,7 +16,7 @@ const App = ({
   query,
   stories,
   onSelectSubject,
-  onChangeInput,
+  onChangeQuery,
 }) => (
   <div>
     <h1>Hacker News with React and Rx.js</h1>
@@ -35,7 +35,7 @@ const App = ({
 
     <input
       type="text"
-      onChange={event => onChangeInput(event.target.value)}
+      onChange={event => onChangeQuery(event.target.value)}
     />
 
     <p>{`http://hn.algolia.com/api/v1/${subject}?query=${query}`}</p>
@@ -81,7 +81,7 @@ export default withObservableStream(
   // handler
   {
     onSelectSubject: subject => subject$.next(subject),
-    onChangeInput: value => query$.next(value),
+    onChangeQuery: value => query$.next(value),
   },
   // initial state
   {
