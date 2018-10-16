@@ -1,19 +1,23 @@
 import React from 'react';
 
-export default (observables, triggers) => Component => {
+export default (observable, triggers, initialState) => Component => {
   return class extends React.Component {
+    constructor(props) {
+      super(props);
+
+      this.state = {
+        ...initialState,
+      };
+    }
+
     componentDidMount() {
-      this.subscriptions = observables.map(observable =>
-        observable.subscribe(
-          newState => this.setState({ ...newState }),
-        ),
+      this.subscription = observable.subscribe(newState =>
+        this.setState({ ...newState }),
       );
     }
 
     componentWillUnmount() {
-      this.subscriptions.forEach(subscription =>
-        subscription.unsubscribe(),
-      );
+      this.subscription.unsubscribe();
     }
 
     render() {

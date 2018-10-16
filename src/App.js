@@ -1,7 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { BehaviorSubject } from 'rxjs/index';
-import { combineLatest, timer } from 'rxjs';
+import { BehaviorSubject, combineLatest, timer } from 'rxjs';
 import { flatMap, map, debounce, filter } from 'rxjs/operators';
 
 import withObservableStream from './withObservableStream';
@@ -12,11 +11,11 @@ const SUBJECT = {
 };
 
 const App = ({
+  query,
   subject,
-  query = '',
-  stories = [],
-  onSelectSubject,
+  stories,
   onChangeQuery,
+  onSelectSubject,
 }) => (
   <div>
     <h1>React with RxJS</h1>
@@ -39,7 +38,10 @@ const App = ({
       ))}
     </div>
 
-    <p>{`http://hn.algolia.com/api/v1/${subject}?query=${query}`}</p>
+    <p>
+      Fetching from:{' '}
+      {`http://hn.algolia.com/api/v1/${subject}?query=${query}`}
+    </p>
 
     <ul>
       {stories.map(story => (
@@ -53,15 +55,15 @@ const App = ({
   </div>
 );
 
-const subject$ = new BehaviorSubject(SUBJECT.POPULARITY);
 const query$ = new BehaviorSubject('react');
+const subject$ = new BehaviorSubject(SUBJECT.POPULARITY);
 
-const queryToFetch$ = query$.pipe(
+const queryForFetch$ = query$.pipe(
   debounce(() => timer(1000)),
   filter(query => query !== ''),
 );
 
-const fetch$ = combineLatest(subject$, queryToFetch$).pipe(
+const fetch$ = combineLatest(subject$, queryForFetch$).pipe(
   flatMap(([subject, query]) =>
     axios(`http://hn.algolia.com/api/v1/${subject}?query=${query}`),
   ),
@@ -69,19 +71,23 @@ const fetch$ = combineLatest(subject$, queryToFetch$).pipe(
 );
 
 export default withObservableStream(
-  // observables
-  [
-    combineLatest(subject$, query$, (subject, query) => ({
+  combineLatest(
+    subject$,
+    query$,
+    fetch$,
+    (subject, query, stories) => ({
       subject,
       query,
-    })),
-    combineLatest(fetch$, stories => ({
       stories,
-    })),
-  ],
-  // triggers
+    }),
+  ),
   {
     onSelectSubject: subject => subject$.next(subject),
     onChangeQuery: value => query$.next(value),
+  },
+  {
+    query: 'react',
+    subject: SUBJECT.POPULARITY,
+    stories: [],
   },
 )(App);
