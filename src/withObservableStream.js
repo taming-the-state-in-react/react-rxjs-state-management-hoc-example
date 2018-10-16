@@ -5,8 +5,7 @@ export default (observables, triggers) => Component => {
     componentDidMount() {
       this.subscriptions = observables.map(observable =>
         observable.subscribe(
-          newState =>
-            console.log(newState) || this.setState({ ...newState }),
+          newState => this.setState({ ...newState }),
         ),
       );
     }
