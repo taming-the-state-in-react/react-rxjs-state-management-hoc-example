@@ -13,13 +13,19 @@ const SUBJECT = {
 
 const App = ({
   subject,
-  query,
-  stories,
+  query = '',
+  stories = [],
   onSelectSubject,
   onChangeQuery,
 }) => (
   <div>
-    <h1>Hacker News with React and Rx.js</h1>
+    <h1>React with RxJS</h1>
+
+    <input
+      type="text"
+      value={query}
+      onChange={event => onChangeQuery(event.target.value)}
+    />
 
     <div>
       {Object.values(SUBJECT).map(subject => (
@@ -32,11 +38,6 @@ const App = ({
         </button>
       ))}
     </div>
-
-    <input
-      type="text"
-      onChange={event => onChangeQuery(event.target.value)}
-    />
 
     <p>{`http://hn.algolia.com/api/v1/${subject}?query=${query}`}</p>
 
@@ -53,7 +54,7 @@ const App = ({
 );
 
 const subject$ = new BehaviorSubject(SUBJECT.POPULARITY);
-const query$ = new BehaviorSubject('');
+const query$ = new BehaviorSubject('react');
 
 const queryToFetch$ = query$.pipe(
   debounce(() => timer(1000)),
@@ -82,11 +83,5 @@ export default withObservableStream(
   {
     onSelectSubject: subject => subject$.next(subject),
     onChangeQuery: value => query$.next(value),
-  },
-  // initial state
-  {
-    subject: SUBJECT.POPULARITY,
-    query: '',
-    stories: [],
   },
 )(App);
