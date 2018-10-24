@@ -6,7 +6,7 @@ Showcasing how RxJS can work in React with state management and higher-order com
 
 ## Installation
 
-* `git clone git@github.com:the-road-to-learn-react/react-rxjs-state-management-hoc-example.git`
+* `git clone git@github.com:taming-the-state-in-react/react-rxjs-state-management-hoc-example.git`
 * cd react-rxjs-state-management-hoc-example
 * npm install
 * npm start
