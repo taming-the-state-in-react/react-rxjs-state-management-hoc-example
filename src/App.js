@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest } from 'rxjs';
 import {
   map,
   filter,
@@ -13,31 +13,6 @@ import {
 
 import withObservableStream from './withObservableStream';
 
-interface Consumer<T> {
-  (value: T): void;
-}
-
-interface Story {
-  objectID: string;
-  url?: string;
-  story_url?: string;
-  title?: string;
-  story_title?: string;
-}
-
-interface PropsType {
-  query: string;
-  subject: string;
-  stories: Array<Story>;
-}
-
-interface TriggersType {
-  onChangeQuery: Consumer<string>;
-  onSelectSubject: Consumer<string>;
-}
-
-type AppProps = TriggersType & PropsType;
-
 const SUBJECT = {
   POPULARITY: 'search',
   DATE: 'search_by_date',
@@ -49,7 +24,7 @@ const App = ({
   stories,
   onChangeQuery,
   onSelectSubject,
-}: AppProps) => (
+}) => (
   <div>
     <h1>React with RxJS</h1>
 
@@ -94,7 +69,7 @@ const subject$ = new BehaviorSubject(SUBJECT.POPULARITY);
 const queryForFetch$ = query$.pipe(
   debounceTime(1000),
   distinctUntilChanged(),
-  filter<string>(Boolean),
+  filter(Boolean),
 );
 
 const fetch$ = combineLatest(subject$, queryForFetch$).pipe(
@@ -103,12 +78,12 @@ const fetch$ = combineLatest(subject$, queryForFetch$).pipe(
     ([subject, query]) =>
       axios(`http://hn.algolia.com/api/v1/${subject}?query=${query}`),
   ),
-  map(result => result.data.hits as Array<Story>),
+  map(result => result.data.hits),
   startWith([]),
   catchError(() => []),
 );
 
-const state$: Observable<PropsType> = combineLatest(
+const state$ = combineLatest(
   subject$,
   query$,
   fetch$,
@@ -120,6 +95,6 @@ const state$: Observable<PropsType> = combineLatest(
 );
 
 export default withObservableStream(state$, {
-  onSelectSubject: (subject: string) => subject$.next(subject),
-  onChangeQuery: (value: string) => query$.next(value),
+  onSelectSubject: subject => subject$.next(subject),
+  onChangeQuery: value => query$.next(value),
 })(App);
