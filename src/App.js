@@ -1,7 +1,15 @@
 import React from 'react';
 import axios from 'axios';
-import { BehaviorSubject, combineLatest, timer } from 'rxjs';
-import { flatMap, map, debounce, filter } from 'rxjs/operators';
+import { BehaviorSubject, combineLatest } from 'rxjs';
+import {
+  map,
+  filter,
+  startWith,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  catchError,
+} from 'rxjs/operators';
 
 import withObservableStream from './withObservableStream';
 
@@ -59,35 +67,34 @@ const query$ = new BehaviorSubject('react');
 const subject$ = new BehaviorSubject(SUBJECT.POPULARITY);
 
 const queryForFetch$ = query$.pipe(
-  debounce(() => timer(1000)),
-  filter(query => query !== ''),
+  debounceTime(1000),
+  distinctUntilChanged(),
+  filter(Boolean),
 );
 
 const fetch$ = combineLatest(subject$, queryForFetch$).pipe(
-  flatMap(([subject, query]) =>
-    axios(`http://hn.algolia.com/api/v1/${subject}?query=${query}`),
+  switchMap(
+    // discard previous requests. Response order not granted.
+    ([subject, query]) =>
+      axios(`http://hn.algolia.com/api/v1/${subject}?query=${query}`),
   ),
   map(result => result.data.hits),
+  startWith([]),
+  catchError(() => []),
 );
 
-export default withObservableStream(
-  combineLatest(
-    subject$,
-    query$,
-    fetch$,
-    (subject, query, stories) => ({
-      subject,
-      query,
-      stories,
-    }),
-  ),
-  {
-    onSelectSubject: subject => subject$.next(subject),
-    onChangeQuery: value => query$.next(value),
-  },
-  {
-    query: 'react',
-    subject: SUBJECT.POPULARITY,
-    stories: [],
-  },
-)(App);
+const state$ = combineLatest(
+  subject$,
+  query$,
+  fetch$,
+  (subject, query, stories) => ({
+    subject,
+    query,
+    stories,
+  }),
+);
+
+export default withObservableStream(state$, {
+  onSelectSubject: subject => subject$.next(subject),
+  onChangeQuery: value => query$.next(value),
+})(App);

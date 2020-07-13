@@ -1,19 +1,26 @@
-import React from 'react';
+import React, { Component } from 'react';
+import { skip, first, shareReplay } from 'rxjs/operators';
 
-export default (observable, triggers, initialState) => Component => {
-  return class extends React.Component {
+export default (observable, triggers) => InnerComponent => {
+  class Decorated extends Component {
     constructor(props) {
       super(props);
+      this.sharedObservable = observable.pipe(shareReplay(1));
 
-      this.state = {
-        ...initialState,
-      };
+      const initializationSubscription = this.sharedObservable
+        .pipe(first())
+        .subscribe(initialState => {
+          this.state = initialState;
+        });
+      initializationSubscription.unsubscribe();
     }
 
     componentDidMount() {
-      this.subscription = observable.subscribe(newState =>
-        this.setState({ ...newState }),
-      );
+      this.subscription = this.sharedObservable
+        .pipe(skip(1))
+        .subscribe(newState => {
+          this.setState(newState);
+        });
     }
 
     componentWillUnmount() {
@@ -22,8 +29,13 @@ export default (observable, triggers, initialState) => Component => {
 
     render() {
       return (
-        <Component {...this.props} {...this.state} {...triggers} />
+        <InnerComponent {...this.props} {...this.state} {...triggers}/>
       );
     }
-  };
+  }
+
+  Decorated.displayName = `withObservableStream(${InnerComponent.displayName ||
+    InnerComponent.name})`;
+
+  return Decorated;
 };
